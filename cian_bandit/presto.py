@@ -10,9 +10,9 @@ import pandas as pd
 # want to run locally without py_common
 
 presto_config = {
-    'host': '192.168.177.251',
+    'host': 'presto.dmonline.ru',
     'port': 8080,
-    'username': 'default',
+    'username': 'alaktionov',
     'catalog': 'hive',
 }
 

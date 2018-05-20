@@ -22,38 +22,53 @@ from cian_bandit.models import Model
 
 EVENTS_PER_MODEL = 100000
 
-os.environ['ES_HOSTS'] = 'hd-cli01.msk.cian.ru'
 
 
 
 @pytest.fixture
 def set_previous_config():
-    hosts = os.environ['ES_HOSTS'].split(',')
+    hosts = ['hd-cli01.msk.cian.ru']
     es = Elasticsearch(hosts=hosts, maxsize=1)
     prev_conf = {
-        "weights": {
-            "desktop": {
-                "1": 0.499,
-                "2": 0.501,
-                "updated": "2017-12-04 03:10:47"
+        "mobile": {},
+        "desktop": {
+            "7": {
+                "prob": 0.51,
+                "parameters": {
+                    "es_index": "item_correlations_desktop_alias",
+                    "must_not_fields": [
+                        "phone"
+                    ],
+                    "item_boost": 1.0,
+                    "last_history_views": 20,
+                    "last_history_phones": 20
+                }
             },
-            "mobile": {}
-        }
+            "8": {
+                "prob": 0.49,
+                "parameters": {
+                    "es_index": "item_correlations_desktop_alias",
+                    "must_not_fields": [
+                        "view",
+                        "phone"
+                    ],
+                    "item_boost": 1.0,
+                    "last_history_views": 5,
+                    "last_history_phones": 5
+                }
+            }
+        },
+        'config_version': 3,
     }
-    result = es.index(
-        index='bandit_pio',
+
+    es.index(
+        index='bandit_ml_recs',
         doc_type='bandit_config',
         id=0,
         body=json.dumps(prev_conf),
     )
 
     yield prev_conf
-
-    es.delete(
-        index='bandit_pio',
-        doc_type='bandit_config',
-        id=0,
-    )
 
 
 def test_bandit_updater(set_previous_config):
@@ -63,23 +78,23 @@ def test_bandit_updater(set_previous_config):
     assuming average rps for each model_version is 10 => model.weight*1000/10 is lambda
     """
 
-    hosts = os.environ['ES_HOSTS'].split(',')
+    hosts = ['hd-cli01.msk.cian.ru']
     weights_storage = WeightStorage(hosts)
     last_config_doc = weights_storage.get_last_config_doc()
-    previous_weights = last_config_doc['_source']['weights']['desktop']
+    previous_weights = last_config_doc['_source']['desktop']
     logging.info(str(previous_weights) + 'previous weights')
 
     last_weights = {
-        '1': 0.25,
-        '2': 0.7,
-        '3': 0.05,
+        '7': 0.25,
+        '8': 0.7,
+        '9': 0.05,
     }
 
     # only CTR
     true_conversions = {
-        '1': 0.02,
-        '2': 0.025,
-        '3': 0.03,
+        '7': 0.02,
+        '8': 0.025,
+        '9': 0.03,
     }
 
     model_info = {}
@@ -115,19 +130,30 @@ def test_bandit_updater(set_previous_config):
     logging.info(str(model_info))
 
     models_config = {
-      "desktop": ["1", "2", "3"],
-      "mobile": []
+        "mobile": {},
+        "desktop": {
+            "7": {
+                "parameters": {}
+            },
+            "8": {
+                "parameters": {}
+            },
+            "9": {
+                "parameters": {}
+            }
+        }
     }
+
 
     batch['page_type'] = 'desktop'
 
     updater = BanditUpdater(weights_storage, batch, True)
     updater.init_bandits(models_config)
-    updater.update_bandits()
+    updater.update_bandits(models_config)
 
     new_config_doc = weights_storage.get_last_config_doc()
-    new_weights = new_config_doc['_source']['weights']['desktop']
+    new_weights = new_config_doc['_source']['desktop']
     logging.info(str(new_weights) + 'new weights')
 
     # first <= second <= third
-    assert new_weights['1'] < new_weights['2'] < new_weights['3'], 'wrong order after evaluation!'
+    assert new_weights['7']['prob'] < new_weights['8']['prob'] < new_weights['9']['prob'], 'wrong order after evaluation!'

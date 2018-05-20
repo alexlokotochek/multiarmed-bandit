@@ -1,4 +1,68 @@
 {
-  "desktop": ["1", "2"],
-  "mobile": []
+  "config_version": 2,
+  "desktop": {
+    "9": {
+      "parameters": {
+        "es_index": "item_correlations_desktop_new_alias",
+        "item_boost": 1.0,
+        "last_history_phones": 20,
+        "last_history_views": 20,
+        "must_not_fields": [
+          "phone"
+        ]
+      },
+      "prob": 0.3
+    },
+    "10": {
+      "parameters": {
+        "es_index": "item_correlations_desktop_new_alias",
+        "item_boost": 1.0,
+        "last_history_phones": 10,
+        "last_history_views": 10,
+        "must_not_fields": [
+          "phone"
+        ]
+      },
+      "prob": 0.3
+    },
+    "11": {
+      "parameters": {
+        "es_index": "item_correlations_desktop_new_alias",
+        "item_boost": 1.0,
+        "last_history_phones": 20,
+        "last_history_views": 20,
+        "must_not_fields": [
+          "view",
+          "phone"
+        ]
+      },
+      "prob": 0.4
+    }
+  },
+  "mobile": {
+    "1": {
+      "parameters": {
+        "es_index": "item_correlations_desktop_new_alias",
+        "item_boost": 1.0,
+        "last_history_phones": 20,
+        "last_history_views": 20,
+        "must_not_fields": [
+          "phone"
+        ]
+      },
+      "prob": 0.5
+    },
+    "2": {
+      "parameters": {
+        "es_index": "item_correlations_mobile_new_alias",
+        "item_boost": 1.0,
+        "last_history_phones": 20,
+        "last_history_views": 20,
+        "must_not_fields": [
+          "phone"
+        ]
+      },
+      "prob": 0.5
+    }
+  }
 }

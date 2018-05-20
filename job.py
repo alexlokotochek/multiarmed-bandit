@@ -1,12 +1,13 @@
 import json
 import os
 import sys
+import datetime
 import argparse
 from cian_bandit.weights_storage import WeightStorage
 from cian_bandit.events_storage import EventsStorage
 from cian_bandit.bandit_updater import BanditUpdater
 
-os.environ['LAST_EVENTS_CNT'] = str(100000)
+os.environ['LAST_EVENTS_CNT'] = str(50000)
 os.environ['ES_HOSTS'] = 'hdes01-data.cian.tech,hdes02-data.cian.tech,hdes03-data.cian.tech'
 os.environ['PRESTO_USER'] = 'alaktionov'
 
@@ -25,11 +26,12 @@ def main():
         help='True if update es bandit doc (affects production!)',
     )
     args = parser.parse_args()
-    really_update_es = True if args.update is not None and args.update == 1 else False
+    really_update_es = False
+    if args.update is not None and args.update == 1:
+        really_update_es = True
     print('Updating ES:', really_update_es)
 
-    hosts = os.environ['ES_HOSTS'].split(',')
-    weights_storage = WeightStorage(hosts)
+    weights_storage = WeightStorage()
     last_config_doc = weights_storage.get_last_config_doc()
     print('previous config:', json.dumps(last_config_doc, indent=2))
 
@@ -53,7 +55,7 @@ def main():
     )
 
     updater.init_bandits(config)
-    updater.update_bandits()
+    updater.update_bandits(config)
 
     config = weights_storage.get_last_config_doc()
     print('new config:', json.dumps(config, indent=2))
